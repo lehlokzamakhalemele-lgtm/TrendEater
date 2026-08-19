@@ -63,18 +63,50 @@
         }
       }
 
+      function uploadVideo(file) {
+        return new Promise((resolve, reject) => {
+          const storageRef = firebase.storage().ref(`videos/${file.name}`);
+          const metadata = { contentType: file.type };
+          const uploadTask = storageRef.put(file, metadata);
+
+          uploadTask.on('state_changed', (snapshot) => {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            libraryMessage.textContent = `Uploading ${file.name}: ${progress}%`;
+          }, reject, resolve);
+        });
+      }
+
       videoPicker.addEventListener('change', async () => {
         const files = Array.from(videoPicker.files);
         if (!files.length) return;
 
-        libraryMessage.hidden = false;
-        libraryMessage.textContent = 'Uploading videos...';
-        for (const file of files) {
-          await firebase.storage().ref(`videos/${file.name}`).put(file);
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser || currentUser.email.toLowerCase() !== window.firebaseOwnerEmail.toLowerCase()) {
+          libraryMessage.hidden = false;
+          libraryMessage.textContent = 'Only the owner can upload videos.';
+          videoPicker.value = '';
+          return;
         }
-        videoGrid.replaceChildren();
-        await loadVideos();
-        videoPicker.value = '';
+
+        try {
+          ownerControls.hidden = true;
+          for (const file of files) {
+            await uploadVideo(file);
+          }
+          videoGrid.replaceChildren();
+          await loadVideos();
+        } catch (error) {
+          libraryMessage.hidden = false;
+          libraryMessage.textContent = error.code === 'storage/unauthorized'
+            ? 'Upload denied. Your Firebase account is not a moderator.'
+            : error.code === 'storage/canceled'
+              ? 'Upload canceled.'
+              : 'Upload failed. Check Firebase Storage and its security rules.';
+          console.error(error);
+        } finally {
+          ownerControls.hidden = false;
+          videoPicker.value = '';
+        }
       });
 
       window.addEventListener('load', async () => {
@@ -85,7 +117,7 @@
             return;
           }
 
-          if (user.email === window.firebaseOwnerEmail) {
+          if (user.email.toLowerCase() === window.firebaseOwnerEmail.toLowerCase()) {
             ownerControls.hidden = false;
           }
 
