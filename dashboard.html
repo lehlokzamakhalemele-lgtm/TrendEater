@@ -37,13 +37,6 @@
         </div>
       </section>
 
-      <section class="daily-headsup-box" aria-labelledby="dailyHeadsUpTitle">
-        <p class="eyebrow">Daily update</p>
-        <h2 id="dailyHeadsUpTitle">Daily HeadsUp</h2>
-        <input id="dailyHeadsUpLink" type="url" placeholder="Paste a website link..." aria-label="Daily HeadsUp link" />
-        <textarea id="dailyHeadsUpText" placeholder="Write something below the link..." aria-label="Daily HeadsUp text"></textarea>
-        <a id="dailyHeadsUpLinkPreview" class="daily-headsup-link" target="_blank" rel="noopener noreferrer" hidden></a>
-      </section>
     </main>
 
     <script>
@@ -54,9 +47,6 @@
       const folderUnlockForm = document.getElementById('folderUnlockForm');
       const folderSecretInput = document.getElementById('folderSecretInput');
       const folderMessage = document.getElementById('folderMessage');
-      const dailyHeadsUpLink = document.getElementById('dailyHeadsUpLink');
-      const dailyHeadsUpText = document.getElementById('dailyHeadsUpText');
-      const dailyHeadsUpLinkPreview = document.getElementById('dailyHeadsUpLinkPreview');
       const websiteLinksInput = document.getElementById('websiteLinksInput');
       const websiteLinksList = document.getElementById('websiteLinksList');
 
@@ -100,29 +90,6 @@
         }
       }
 
-      function renderDailyHeadsUp() {
-        const link = dailyHeadsUpLink.value.trim();
-        const url = /^https?:\/\//i.test(link) ? link : `https://${link}`;
-
-        if (link) {
-          try {
-            const parsedUrl = new URL(url);
-            dailyHeadsUpLinkPreview.href = parsedUrl.href;
-            dailyHeadsUpLinkPreview.textContent = link;
-            dailyHeadsUpLinkPreview.hidden = false;
-          } catch {
-            dailyHeadsUpLinkPreview.hidden = true;
-          }
-        } else {
-          dailyHeadsUpLinkPreview.hidden = true;
-        }
-
-        if (ownerCanEdit) {
-          localStorage.setItem('trendEaterDailyHeadsUpLink', dailyHeadsUpLink.value);
-          localStorage.setItem('trendEaterDailyHeadsUpText', dailyHeadsUpText.value);
-        }
-      }
-
       folderUnlockForm.addEventListener('submit', (event) => {
         event.preventDefault();
         if (folderSecretInput.value !== secretCode) {
@@ -136,8 +103,6 @@
       });
 
       websiteLinksInput.addEventListener('input', renderWebsiteLinks);
-      dailyHeadsUpLink.addEventListener('input', renderDailyHeadsUp);
-      dailyHeadsUpText.addEventListener('input', renderDailyHeadsUp);
 
       window.addEventListener('load', async () => {
         initializeFirebase();
@@ -155,11 +120,6 @@
             console.warn('Could not read moderator claim; using owner email access.', error);
           }
 
-          dailyHeadsUpLink.disabled = !ownerCanEdit;
-          dailyHeadsUpText.disabled = !ownerCanEdit;
-          dailyHeadsUpLink.value = localStorage.getItem('trendEaterDailyHeadsUpLink') || '';
-          dailyHeadsUpText.value = localStorage.getItem('trendEaterDailyHeadsUpText') || '';
-          renderDailyHeadsUp();
           websiteLinksInput.disabled = !ownerCanEdit;
           websiteLinksInput.value = localStorage.getItem('trendEaterWebsiteLinks') || '';
           renderWebsiteLinks();
