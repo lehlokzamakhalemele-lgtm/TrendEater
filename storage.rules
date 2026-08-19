@@ -5,7 +5,10 @@ service firebase.storage {
     match /videos/{videoName} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
-        && request.auth.token.moderator == true;
+        && (
+          request.auth.token.moderator == true
+          || request.auth.token.email == 'Dalachartsuniversity@gmail.com'
+        );
     }
   }
 }
