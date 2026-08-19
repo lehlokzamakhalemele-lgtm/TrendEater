@@ -24,34 +24,49 @@
           <h2>Enter secret code</h2>
           <form id="folderUnlockForm">
             <input id="folderSecretInput" type="password" autocomplete="off" placeholder="Secret code" required />
-            <button class="primary-btn" type="submit">Open videos</button>
+            <button class="primary-btn" type="submit">Open</button>
           </form>
           <p id="folderMessage" class="helper-text" aria-live="polite"></p>
         </div>
 
         <div id="folderContent" hidden>
-          <p class="eyebrow">Private folder</p>
+          <p class="eyebrow">Dalachart</p>
           <h2 id="websiteLinksTitle">VIDEOS</h2>
           <textarea id="websiteLinksInput" aria-label="Website links" placeholder="Type one website link per line..."></textarea>
           <div id="websiteLinksList" class="website-links-list"></div>
         </div>
       </section>
 
-      
+      <section class="daily-headsup-box" aria-labelledby="dailyHeadsUpTitle">
+        <p class="eyebrow">Daily update</p>
+        <h2 id="dailyHeadsUpTitle">Daily HeadsUp</h2>
+        <input id="dailyHeadsUpLink" type="url" placeholder="Paste a website link..." aria-label="Daily HeadsUp link" />
+        <textarea id="dailyHeadsUpText" placeholder="Write something below the link..." aria-label="Daily HeadsUp text"></textarea>
+        <a id="dailyHeadsUpLinkPreview" class="daily-headsup-link" target="_blank" rel="noopener noreferrer" hidden></a>
+      </section>
     </main>
 
     <script>
-      const secretCode = 'Dalacharts1234$';
+      const secretCode = '1234$';
       const videoLinksFolder = document.getElementById('videoLinksFolder');
       const folderLock = document.getElementById('folderLock');
       const folderContent = document.getElementById('folderContent');
       const folderUnlockForm = document.getElementById('folderUnlockForm');
       const folderSecretInput = document.getElementById('folderSecretInput');
       const folderMessage = document.getElementById('folderMessage');
+      const dailyHeadsUpLink = document.getElementById('dailyHeadsUpLink');
+      const dailyHeadsUpText = document.getElementById('dailyHeadsUpText');
+      const dailyHeadsUpLinkPreview = document.getElementById('dailyHeadsUpLinkPreview');
       const websiteLinksInput = document.getElementById('websiteLinksInput');
       const websiteLinksList = document.getElementById('websiteLinksList');
 
       let ownerCanEdit = false;
+
+      function canManageContent(user) {
+        const ownerEmail = String(window.firebaseOwnerEmail || '').trim().toLowerCase();
+        const userEmail = String(user.email || '').trim().toLowerCase();
+        return userEmail === ownerEmail;
+      }
 
       function setFolderOpen(isOpen) {
         videoLinksFolder.classList.toggle('is-locked', !isOpen);
@@ -85,6 +100,29 @@
         }
       }
 
+      function renderDailyHeadsUp() {
+        const link = dailyHeadsUpLink.value.trim();
+        const url = /^https?:\/\//i.test(link) ? link : `https://${link}`;
+
+        if (link) {
+          try {
+            const parsedUrl = new URL(url);
+            dailyHeadsUpLinkPreview.href = parsedUrl.href;
+            dailyHeadsUpLinkPreview.textContent = link;
+            dailyHeadsUpLinkPreview.hidden = false;
+          } catch {
+            dailyHeadsUpLinkPreview.hidden = true;
+          }
+        } else {
+          dailyHeadsUpLinkPreview.hidden = true;
+        }
+
+        if (ownerCanEdit) {
+          localStorage.setItem('trendEaterDailyHeadsUpLink', dailyHeadsUpLink.value);
+          localStorage.setItem('trendEaterDailyHeadsUpText', dailyHeadsUpText.value);
+        }
+      }
+
       folderUnlockForm.addEventListener('submit', (event) => {
         event.preventDefault();
         if (folderSecretInput.value !== secretCode) {
@@ -98,6 +136,8 @@
       });
 
       websiteLinksInput.addEventListener('input', renderWebsiteLinks);
+      dailyHeadsUpLink.addEventListener('input', renderDailyHeadsUp);
+      dailyHeadsUpText.addEventListener('input', renderDailyHeadsUp);
 
       window.addEventListener('load', async () => {
         initializeFirebase();
@@ -107,7 +147,19 @@
             return;
           }
 
-          ownerCanEdit = user.email.toLowerCase() === window.firebaseOwnerEmail.toLowerCase();
+          ownerCanEdit = canManageContent(user);
+          try {
+            const tokenResult = await user.getIdTokenResult();
+            ownerCanEdit = ownerCanEdit || tokenResult.claims.moderator === true;
+          } catch (error) {
+            console.warn('Could not read moderator claim; using owner email access.', error);
+          }
+
+          dailyHeadsUpLink.disabled = !ownerCanEdit;
+          dailyHeadsUpText.disabled = !ownerCanEdit;
+          dailyHeadsUpLink.value = localStorage.getItem('trendEaterDailyHeadsUpLink') || '';
+          dailyHeadsUpText.value = localStorage.getItem('trendEaterDailyHeadsUpText') || '';
+          renderDailyHeadsUp();
           websiteLinksInput.disabled = !ownerCanEdit;
           websiteLinksInput.value = localStorage.getItem('trendEaterWebsiteLinks') || '';
           renderWebsiteLinks();
