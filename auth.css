@@ -492,6 +492,40 @@ img {
   box-shadow: var(--shadow);
 }
 
+.website-links-box.is-locked {
+  display: grid;
+  align-items: center;
+}
+
+.folder-lock h2 {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+}
+
+.folder-lock form {
+  display: grid;
+  gap: 12px;
+}
+
+.folder-lock input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  background: rgba(148, 163, 184, 0.05);
+  color: var(--text);
+  outline: none;
+}
+
+.folder-lock input:focus {
+  border-color: rgba(94, 234, 212, 0.5);
+}
+
+.folder-lock .primary-btn {
+  min-width: 0;
+  padding: 0.75rem 1rem;
+}
+
 .website-links-box h2 {
   margin: 0 0 14px;
   font-size: 1.35rem;
@@ -507,6 +541,11 @@ img {
   background: rgba(148, 163, 184, 0.05);
   color: var(--text);
   outline: none;
+}
+
+.website-links-box textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .website-links-box textarea:focus {

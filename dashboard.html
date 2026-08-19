@@ -12,58 +12,51 @@
     />
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script src="firebase-config.js"></script>
     <link rel="stylesheet" href="auth.css" />
   </head>
   <body>
     <main class="video-page">
       <a class="back-exit" href="auth.html" aria-label="Back to home">&#8592;<span>Back / Exit</span></a>
-      <section class="website-links-box" aria-labelledby="websiteLinksTitle">
-        <p class="eyebrow">Quick links</p>
-        <h2 id="websiteLinksTitle">Websites</h2>
-        <textarea id="websiteLinksInput" aria-label="Website links" placeholder="Type one website link per line..."></textarea>
-        <div id="websiteLinksList" class="website-links-list"></div>
+      <section id="videoLinksFolder" class="website-links-box is-locked" aria-labelledby="websiteLinksTitle">
+        <div id="folderLock" class="folder-lock">
+          <p class="eyebrow">Private folder</p>
+          <h2>Enter secret code</h2>
+          <form id="folderUnlockForm">
+            <input id="folderSecretInput" type="password" autocomplete="off" placeholder="Secret code" required />
+            <button class="primary-btn" type="submit">Open videos</button>
+          </form>
+          <p id="folderMessage" class="helper-text" aria-live="polite"></p>
+        </div>
+
+        <div id="folderContent" hidden>
+          <p class="eyebrow">Private folder</p>
+          <h2 id="websiteLinksTitle">VIDEOS</h2>
+          <textarea id="websiteLinksInput" aria-label="Website links" placeholder="Type one website link per line..."></textarea>
+          <div id="websiteLinksList" class="website-links-list"></div>
+        </div>
       </section>
 
-      <section class="video-library" aria-labelledby="videoLibraryTitle">
-        <div class="video-library-header">
-          <div>
-            <p class="eyebrow">TrendEater library</p>
-            <h1 id="videoLibraryTitle">Videos</h1>
-          </div>
-        </div>
-        <p id="libraryMessage" class="helper-text">Loading videos...</p>
-        <div id="videoGrid" class="video-grid"></div>
-      </section>
+      
     </main>
 
     <script>
-      const videoGrid = document.getElementById('videoGrid');
-      const libraryMessage = document.getElementById('libraryMessage');
+      const secretCode = 'Dalacharts1234$';
+      const videoLinksFolder = document.getElementById('videoLinksFolder');
+      const folderLock = document.getElementById('folderLock');
+      const folderContent = document.getElementById('folderContent');
+      const folderUnlockForm = document.getElementById('folderUnlockForm');
+      const folderSecretInput = document.getElementById('folderSecretInput');
+      const folderMessage = document.getElementById('folderMessage');
       const websiteLinksInput = document.getElementById('websiteLinksInput');
       const websiteLinksList = document.getElementById('websiteLinksList');
 
-      function renderVideo(fileName, url) {
-        const videoCard = document.createElement('article');
-        videoCard.className = 'video-card';
-        videoCard.innerHTML = `<video controls preload="metadata" src="${url}"></video><p>${fileName}</p>`;
-        videoGrid.appendChild(videoCard);
-      }
+      let ownerCanEdit = false;
 
-      async function loadVideos() {
-        const storageRef = firebase.storage().ref('videos');
-        const result = await storageRef.listAll();
-
-        if (!result.items.length) {
-          libraryMessage.textContent = 'No videos have been added yet.';
-          return;
-        }
-
-        libraryMessage.hidden = true;
-        for (const item of result.items) {
-          renderVideo(item.name, await item.getDownloadURL());
-        }
+      function setFolderOpen(isOpen) {
+        videoLinksFolder.classList.toggle('is-locked', !isOpen);
+        folderLock.hidden = isOpen;
+        folderContent.hidden = !isOpen;
       }
 
       function renderWebsiteLinks() {
@@ -87,12 +80,24 @@
           }
         }
 
-        localStorage.setItem('trendEaterWebsiteLinks', websiteLinksInput.value);
+        if (ownerCanEdit) {
+          localStorage.setItem('trendEaterWebsiteLinks', websiteLinksInput.value);
+        }
       }
 
-      websiteLinksInput.value = localStorage.getItem('trendEaterWebsiteLinks') || '';
+      folderUnlockForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (folderSecretInput.value !== secretCode) {
+          folderMessage.textContent = 'Incorrect secret code.';
+          folderSecretInput.select();
+          return;
+        }
+
+        setFolderOpen(true);
+        folderSecretInput.value = '';
+      });
+
       websiteLinksInput.addEventListener('input', renderWebsiteLinks);
-      renderWebsiteLinks();
 
       window.addEventListener('load', async () => {
         initializeFirebase();
@@ -102,11 +107,13 @@
             return;
           }
 
-          try {
-            await loadVideos();
-          } catch (error) {
-            libraryMessage.textContent = 'Videos could not be loaded. Check Firebase Storage rules.';
-            console.error(error);
+          ownerCanEdit = user.email.toLowerCase() === window.firebaseOwnerEmail.toLowerCase();
+          websiteLinksInput.disabled = !ownerCanEdit;
+          websiteLinksInput.value = localStorage.getItem('trendEaterWebsiteLinks') || '';
+          renderWebsiteLinks();
+
+          if (!ownerCanEdit) {
+            websiteLinksInput.placeholder = 'Links are read-only for this account.';
           }
         });
       });
