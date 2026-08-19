@@ -19,15 +19,18 @@
   <body>
     <main class="video-page">
       <a class="back-exit" href="auth.html" aria-label="Back to home">&#8592;<span>Back / Exit</span></a>
+      <section class="website-links-box" aria-labelledby="websiteLinksTitle">
+        <p class="eyebrow">Quick links</p>
+        <h2 id="websiteLinksTitle">Websites</h2>
+        <textarea id="websiteLinksInput" aria-label="Website links" placeholder="Type one website link per line..."></textarea>
+        <div id="websiteLinksList" class="website-links-list"></div>
+      </section>
+
       <section class="video-library" aria-labelledby="videoLibraryTitle">
         <div class="video-library-header">
           <div>
             <p class="eyebrow">TrendEater library</p>
             <h1 id="videoLibraryTitle">Videos</h1>
-          </div>
-          <div id="ownerControls" class="owner-controls" hidden>
-            <label class="add-video-button" for="videoPicker" title="Add a video">+</label>
-            <input id="videoPicker" type="file" accept="video/*" multiple hidden />
           </div>
         </div>
         <p id="libraryMessage" class="helper-text">Loading videos...</p>
@@ -38,8 +41,8 @@
     <script>
       const videoGrid = document.getElementById('videoGrid');
       const libraryMessage = document.getElementById('libraryMessage');
-      const ownerControls = document.getElementById('ownerControls');
-      const videoPicker = document.getElementById('videoPicker');
+      const websiteLinksInput = document.getElementById('websiteLinksInput');
+      const websiteLinksList = document.getElementById('websiteLinksList');
 
       function renderVideo(fileName, url) {
         const videoCard = document.createElement('article');
@@ -63,51 +66,33 @@
         }
       }
 
-      function uploadVideo(file) {
-        return new Promise((resolve, reject) => {
-          const storageRef = firebase.storage().ref(`videos/${file.name}`);
-          const metadata = { contentType: file.type };
-          const uploadTask = storageRef.put(file, metadata);
+      function renderWebsiteLinks() {
+        websiteLinksList.replaceChildren();
+        const links = websiteLinksInput.value.split('\n').map((link) => link.trim()).filter(Boolean);
 
-          uploadTask.on('state_changed', (snapshot) => {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            libraryMessage.textContent = `Uploading ${file.name}: ${progress}%`;
-          }, reject, resolve);
-        });
+        for (const link of links) {
+          const url = /^https?:\/\//i.test(link) ? link : `https://${link}`;
+          try {
+            const parsedUrl = new URL(url);
+            const anchor = document.createElement('a');
+            anchor.href = parsedUrl.href;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            anchor.textContent = link;
+            websiteLinksList.appendChild(anchor);
+          } catch {
+            const invalidLink = document.createElement('span');
+            invalidLink.textContent = link;
+            websiteLinksList.appendChild(invalidLink);
+          }
+        }
+
+        localStorage.setItem('trendEaterWebsiteLinks', websiteLinksInput.value);
       }
 
-      videoPicker.addEventListener('change', async () => {
-        const files = Array.from(videoPicker.files);
-        if (!files.length) return;
-
-        const currentUser = firebase.auth().currentUser;
-        if (!currentUser || currentUser.email.toLowerCase() !== window.firebaseOwnerEmail.toLowerCase()) {
-          libraryMessage.hidden = false;
-          libraryMessage.textContent = 'Only the owner can upload videos.';
-          videoPicker.value = '';
-          return;
-        }
-
-        try {
-          ownerControls.hidden = true;
-          for (const file of files) {
-            await uploadVideo(file);
-          }
-          videoGrid.replaceChildren();
-          await loadVideos();
-        } catch (error) {
-          libraryMessage.hidden = false;
-          libraryMessage.textContent = error.code === 'storage/unauthorized'
-            ? 'Upload denied. Your Firebase account is not a moderator.'
-            : error.code === 'storage/canceled'
-              ? 'Upload canceled.'
-              : 'Upload failed. Check Firebase Storage and its security rules.';
-          console.error(error);
-        } finally {
-          ownerControls.hidden = false;
-          videoPicker.value = '';
-        }
-      });
+      websiteLinksInput.value = localStorage.getItem('trendEaterWebsiteLinks') || '';
+      websiteLinksInput.addEventListener('input', renderWebsiteLinks);
+      renderWebsiteLinks();
 
       window.addEventListener('load', async () => {
         initializeFirebase();
@@ -115,10 +100,6 @@
           if (!user) {
             window.location.href = 'login.html';
             return;
-          }
-
-          if (user.email.toLowerCase() === window.firebaseOwnerEmail.toLowerCase()) {
-            ownerControls.hidden = false;
           }
 
           try {
