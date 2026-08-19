@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TrendEater | Login</title>
+    <meta
+      name="description"
+      content="Login or create an account to join the TrendEater trading community."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link rel="stylesheet" href="auth.css" />
+  </head>
+  <body>
+    <div class="auth-shell auth-landing">
+      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <aside class="side-menu" aria-label="Main menu">
+        <nav class="side-menu-nav">
+          <a href="#about">About</a>
+          <a href="#community">Community</a>
+          <a href="#mentorship">Mentorship</a>
+        </nav>
+      </aside>
+
+      <div class="auth-toolbar" aria-label="Authentication tabs">
+        <a class="tab active" href="login.html">Login</a>
+        <a class="tab" href="register.html">Register</a>
+      </div>
+    </div>
+
+    <script>
+      const menuToggle = document.querySelector('.menu-toggle');
+      const sideMenu = document.querySelector('.side-menu');
+
+      menuToggle.addEventListener('click', () => {
+        const isOpen = sideMenu.classList.toggle('open');
+        menuToggle.setAttribute('aria-expanded', String(isOpen));
+      });
+    </script>
+  </body>
+</html>
