@@ -1,5 +1,4 @@
 window.firebaseConfig = {
-
   apiKey: "AIzaSyB7ddt3UBNCGNGtqnM6ySdOCJMY5WbS_Sc",
   authDomain: "trendeater-66e4f.firebaseapp.com",
   projectId: "trendeater-66e4f",
@@ -7,9 +6,9 @@ window.firebaseConfig = {
   messagingSenderId: "472425326012",
   appId: "1:472425326012:web:df1d6e0496c8f76d25b7b9",
   measurementId: "G-YW8J9P7T4N"
-
-
 };
+
+window.firebaseOwnerEmail = "YOUR-FIREBASE-OWNER-EMAIL";
 
 window.firebaseReady = {
   initialized: false,
